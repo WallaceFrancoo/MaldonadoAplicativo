@@ -43,6 +43,7 @@ def extrair_dados(conteudo):
     # Regex para extrair os dados
     padrao = re.compile(r'(\d{2}/\d{2}/\d{4})\s+(.*?)\s+(D|C)\s+([-]?[\d,.]+)\s+([-]?[\d,.]+)', re.MULTILINE | re.DOTALL)
     resultados = []
+    linha = 1
 
     for match in padrao.finditer(conteudo):
         data = match.group(1).strip()
@@ -76,11 +77,16 @@ def extrair_dados(conteudo):
                     resultados.append(f"{data};{contaD};;{strvalorConvertido};;{Historico}{descricao};1;;;")
                     resultados.append(f"{data};;{consultarCliente};{strvalorSemTaxa};;{Historico}{descricao};;;;")
                     resultados.append(f"{data};;535;{strvalorDaTaxa};;TARIFA BANCARIA REF. {descricao};;;;")
+                    contaC = consultarCliente
+                    strvalor = strvalorConvertido
 
                 elif consultarTarifa == 0:
                     valorConvertido = float(valor)
                     strvalorConvertido = "{:.2f}".format(valorConvertido).replace(".", ",")
                     resultados.append(f"{data};{contaD};{consultarCliente};{strvalorConvertido};;{Historico}{descricao};1;;;")
+                    contaC = consultarCliente
+                    strvalor = strvalorConvertido
+
             elif consultarDistribuicao == "2":
                 if consultarTarifa == 1:
                     valorConvertido = float(valor)
@@ -100,6 +106,8 @@ def extrair_dados(conteudo):
                     resultados.append(f"{data};;10006;{strparteLaks};;{Historico}{descricao};;;;")
                     resultados.append(f"{data};;10002;{strpartePili};;{Historico}{descricao};;;;")
                     resultados.append(f"{data};;535;{strvalorDaTaxa};;TARIFA BANCARIA REF. {descricao};;;;")
+                    contaC = consultarCliente
+                    strvalor = valorConvertido
                 elif consultarTarifa == 0:
                     valorConvertido = float(valor)
                     parteMaldonado = round(valorConvertido * 0.3333,2)
@@ -113,19 +121,19 @@ def extrair_dados(conteudo):
                     resultados.append(f"{data};;{consultarCliente};{strparteMaldonado};;{Historico}{descricao};;;;")
                     resultados.append(f"{data};;10006;{strparteLaks};;{Historico}{descricao};;;;")
                     resultados.append(f"{data};;10002;{strpartePili};;{Historico}{descricao};;;;")
+                    contaC = consultarCliente
+                    strvalor = valorConvertido
             else:
                 strvalor = str(valor).replace(".", ",")
                 resultados.append(f"{data};{contaD};{contaC};{strvalor};;{Historico}{descricao};1;;;")
         else:
             strvalor = str(valor).replace(".", ",")
             resultados.append(f"{data};{contaD};{contaC};{strvalor};;{Historico}{descricao};1;;;")
-        linhas_erros = unidecode(f"Aviso: No Dia {data} o lançamento com o historico: - ({Historico}) O lançamento irá para acerto!")
-
+            linhas_erros = unidecode(f"Aviso: No Dia {data} o lançamento com o historico: - ({Historico}) O lançamento irá para acerto!")
         if contaD == "6" or contaC == "6":
             relatorio_separado.append(f"{data};{contaD};{contaC};{strvalor};;{Historico}{descricao};1;;;")
-
+        linha = linha + 1
     return resultados, relatorio_separado, dados_laks, dados_pili
-
 def extrair_repasse(conteudo):
     # Listas para armazenar múltiplas ocorrências de repasses
     conteudo = corrigir_quebras(conteudo)  # Corrigir quebras de linha no conteúdo do PDF
@@ -202,6 +210,7 @@ def historicoComp(origem):
     else:
         retorno = "PGTO REF. "
     return retorno
+
 resultados = []
 repasse_extraido = []
 relatorio_separado = []
@@ -259,9 +268,11 @@ def buscarRepasse():
             print(f"Arquivo salvo em: {caminho_salvar}")
         else:
             print("Nenhum caminho de arquivo foi selecionado para salvar.")
+        repasse_extraido = []
 
         return
     else:
+
         return None
 def gerarArquivos():
     global resultados, relatorio_separado
@@ -294,6 +305,10 @@ def gerarArquivos():
         except Exception as e:
             print(f"Erro ao salvar arquivos: {e}")
             messagebox.showerror("Erro", f"Erro ao salvar os arquivos: {e}")
+
+        resultados = []
+        relatorio_separado = []
+
     else:
         print("Pasta de salvamento não selecionada")
 
